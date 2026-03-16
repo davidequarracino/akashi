@@ -1,6 +1,7 @@
 package model
 
 import (
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -337,7 +338,7 @@ type DecisionErasure struct {
 	ErasedAt     time.Time `json:"erased_at"`
 }
 
-// ValidConflictKinds is the set of recognised ConflictKind values.
+// ValidConflictKinds is the set of recognized ConflictKind values.
 var ValidConflictKinds = []ConflictKind{
 	ConflictKindCrossAgent,
 	ConflictKindSelfContradiction,
@@ -353,3 +354,12 @@ func IsValidConflictKind(kind string) bool {
 	return false
 }
 
+// ValidConflictKindsString returns the valid conflict kinds as a comma-separated string
+// (e.g., "cross_agent, self_contradiction").
+func ValidConflictKindsString() string {
+	s := make([]string, len(ValidConflictKinds))
+	for i, v := range ValidConflictKinds {
+		s[i] = string(v)
+	}
+	return strings.Join(s, ", ")
+}
