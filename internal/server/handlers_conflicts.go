@@ -21,15 +21,11 @@ func (h *Handlers) HandleListConflicts(w http.ResponseWriter, r *http.Request) {
 	claims := ClaimsFromContext(r.Context())
 	orgID := OrgIDFromContext(r.Context())
 
-	if ck := r.URL.Query().Get("conflict_kind"); ck != "" {
-		if !model.IsValidConflictKind(ck) {
-			http.Error(w,
-				fmt.Sprintf("invalid conflict_kind %q, valid values: cross_agent, self_contradiction", ck),
-				http.StatusBadRequest)
-			return
-		}
+	filters, err := parseConflictFilters(r)
+	if err != nil {
+		writeError(w, r, http.StatusBadRequest, model.ErrorCodeInvalidInput, err.Error())
+		return
 	}
-	filters := parseConflictFilters(r)
 	limit := queryLimit(r, 25)
 	offset := queryOffset(r)
 
@@ -76,6 +72,11 @@ func (h *Handlers) HandleListConflictGroups(w http.ResponseWriter, r *http.Reque
 		filters.AgentID = &aid
 	}
 	if ck := r.URL.Query().Get("conflict_kind"); ck != "" {
+		if !model.IsValidConflictKind(ck) {
+			msg := fmt.Sprintf("invalid conflict_kind %q: must be one of %s", ck, model.ValidConflictKindsString())
+			writeError(w, r, http.StatusBadRequest, model.ErrCodeInvalidInput, msg)
+			return
+		}
 		filters.ConflictKind = &ck
 	}
 	// status=open (or acknowledged) maps to OpenOnly. Any other value (resolved, wont_fix)
@@ -605,6 +606,11 @@ func (h *Handlers) HandleConflictAnalytics(w http.ResponseWriter, r *http.Reques
 		filters.DecisionType = &v
 	}
 	if v := r.URL.Query().Get("conflict_kind"); v != "" {
+		if !model.IsValidConflictKind(v) {
+			msg := fmt.Sprintf("invalid conflict_kind: must be one of %s", model.ValidConflictKindsString())
+			writeError(w, r, http.StatusBadRequest, model.ErrCodeInvalidInput, msg)
+			return
+		}
 		filters.ConflictKind = &v
 	}
 
