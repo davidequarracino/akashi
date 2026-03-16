@@ -669,7 +669,7 @@ func (h *Handlers) HandleDecisionConflicts(w http.ResponseWriter, r *http.Reques
 }
 
 // parseConflictFilters extracts conflict filter parameters from the request query string.
-func parseConflictFilters(r *http.Request) storage.ConflictFilters {
+func parseConflictFilters(r *http.Request) (storage.ConflictFilters, error) {
 	filters := storage.ConflictFilters{}
 	if dt := r.URL.Query().Get("decision_type"); dt != "" {
 		filters.DecisionType = &dt
@@ -678,6 +678,9 @@ func parseConflictFilters(r *http.Request) storage.ConflictFilters {
 		filters.AgentID = &aid
 	}
 	if ck := r.URL.Query().Get("conflict_kind"); ck != "" {
+		if !model.IsValidConflictKind(ck) {
+			return filters, fmt.Errorf("invalid conflict_kind: must be one of %s", model.ValidConflictKindsString())
+		}
 		filters.ConflictKind = &ck
 	}
 	if sev := r.URL.Query().Get("severity"); sev != "" {
@@ -689,5 +692,5 @@ func parseConflictFilters(r *http.Request) storage.ConflictFilters {
 	if st := r.URL.Query().Get("status"); st != "" {
 		filters.Status = &st
 	}
-	return filters
+	return filters, nil
 }
